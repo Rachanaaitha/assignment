@@ -1,0 +1,16 @@
+@app.route('/baggage/count/gates')
+def get_bag_count_per_gate():
+    since_minutes = int(request.args.get('since_minutes', 60))
+    since = datetime.utcnow() - timedelta(minutes=since_minutes)
+
+    results = db.session.query(
+        BagScan.destination_gate,
+        db.func.count(db.func.distinct(BagScan.bag_tag_id)).label('bag_count')
+    ).filter(
+        BagScan.timestamp >= since
+    ).group_by(BagScan.destination_gate).all()
+
+    return jsonify([
+        {"destination_gate": row.destination_gate, "bag_count": row.bag_count}
+        for row in results
+    ])
